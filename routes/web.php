@@ -27,3 +27,5 @@ Route::get('/home', [
 
 
 Route::resource('boholWeathers', App\Http\Controllers\BoholWeatherController::class);
+
+Route::resource('logs', App\Http\Controllers\LogsController::class);

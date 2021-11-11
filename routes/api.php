@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\API\BoholWeatherControllerAPI;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,4 +18,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
-Route::get('bohol-weather',[\App\Http\Controllers\API\BoholWeatherControllerAPI::class,'index']);
+Route::post('login',[BoholWeatherControllerAPI::class,'login']);
+Route::post('register',[BoholWeatherControllerAPI::class,'register']);
+Route::post('reset-password',[BoholWeatherControllerAPI::class,'resetPassword']);
+
