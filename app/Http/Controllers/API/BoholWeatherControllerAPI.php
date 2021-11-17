@@ -1,94 +1,74 @@
 <?php
 
-
 namespace App\Http\Controllers\API;
-
 
 use App\Http\Controllers\Controller;
 use App\Models\BoholWeather;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 use App\Models\User;
-use App\Models\Logs;
+use Flash;
+use Response;
 
-class BoholWeatherControllerAPI extends Controller
-{
-
+class BoholWeatherControllerAPI extends Controller {
     public $successStatus = 200;
 
-    public function login() {
-        if (Auth::attempt(['username' => request('username'), 'password' => request('password')])) {
+    public function getAllBoholWeathers(Request $request) {
+        $token = $request['t']; // t = token
+        $userid = $request['u']; // u = userid
 
-            $user = Auth::user();
-
-            $success['token'] = Str::random(64);
-            $success['username'] = $user->username;
-            $success['id'] = $user->id;
-            $success['name'] = $user->name;
-
-            // SAVE TOKEN
-            $user->remember_token = $success['token'];
-            $user->save();
-
-            $logs = new Logs();
-            $logs->userid = $user->id;
-            $logs->log = "Login";
-            $logs->logdetails = "User $user->name has logged in to my system";
-            $logs->logtype = "API login";
-            $logs->save();
-
-
-            return response()->json($success, $this->successStatus);
-
-        } else {
-            return response()->json(['response' => 'User not found'], 404);
-        }
-    }
-
-    public function register(Request $request) {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required',
-            'username' => 'required',
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['response' => $validator->errors()], 401);
-        } else {
-            $input = $request->all();
-
-            if (User::where('email', $input['email'])->exists()) {
-                return response()->json(['response' => 'Email already exists'], 401);
-            } elseif(User::where('username', $input['username'])->exists()) {
-                return response()->json(['response' => 'Username already exists'], 401);
-            } else {
-                $input['password'] = bcrypt($input['password']);
-                $user = User::create($input);
-
-                $success['token'] = Str::random(64);
-                $success['username'] = $user->username;
-                $success['id'] = $user->id;
-                $success['name'] = $user->name;
-
-                return response()->json($success, $this->successStatus);
-            }
-        }
-    }
-
-    public function resetPassword(Request $request) {
-        $user = User::where('email', $request['email'])->first();
+        $user = User::where('id', $userid)->where('remember_token', $token)->first();
 
         if ($user != null) {
-            $user->password = bcrypt($request['password']);
-            $user->save();
+            $BoholWeather = BoholWeather::all();
 
-            return response()->json(['response' => 'User has successfully resetted his/her password'], $this->successStatus);
+            return response()->json($BoholWeather, $this->successStatus);
         } else {
-            return response()->json(['response' => 'User not found'], 404);
-        }
+            return response()->json(['response' => 'Bad Call'], 501);
+        }        
+    }  
+    
+    public function getBoholWeather(Request $request) {
+        $id = $request['bwid']; // pid = BoholWeather id
+        $token = $request['t']; // t = token
+        $userid = $request['u']; // u = userid
+
+        $user = User::where('id', $userid)->where('remember_token', $token)->first();
+
+        if ($user != null) {
+            $BoholWeather = BoholWeather::where('id', $id)->first();
+
+            if ($BoholWeather != null) {
+                return response()->json($BoholWeather, $this->successStatus);
+            } else {
+                return response()->json(['response' => 'BoholWeather not found!'], 404);
+            }            
+        } else {
+            return response()->json(['response' => 'Bad Call'], 501);
+        }  
+    }
+
+    public function searchBoholWeather(Request $request) {
+        $params = $request['p']; // p = params
+        $token = $request['t']; // t = token
+        $userid = $request['u']; // u = userid
+
+        $user = User::where('id', $userid)->where('remember_token', $token)->first();
+
+        if ($user != null) {
+            $BoholWeather = BoholWeather::where('Town', 'LIKE', '%' . $params . '%')
+                ->orWhere('temperature', 'LIKE', '%' . $params . '%')
+                ->get();
+            // SELECT * FROM BoholWeather WHERE description LIKE '%params%' OR title LIKE '%params%'
+            if ($BoholWeather != null) {
+                return response()->json($BoholWeather, $this->successStatus);
+            } else {
+                return response()->json(['response' => 'BoholWeather not found!'], 404);
+            }            
+        } else {
+            return response()->json(['response' => 'Bad Call'], 501);
+        }  
     }
 }
